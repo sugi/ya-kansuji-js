@@ -2,7 +2,7 @@
 
 Yet another (ultimate) Japanese Kansuji library for JavaScript/TypeScript.
 
-`ya-kansuji` は Ruby gem [ya_kansuji](https://github.com/sugi/ya_kansuji) の TypeScript/JavaScript 移植版です。漢数字・大字・全角数字混じりのテキストと数値を相互変換します。
+`ya-kansuji` は Ruby gem [ya_kansuji](https://github.com/sugi/ya_kansuji) の TypeScript/JavaScript 移植版です。漢数字・大字・全角数字混じりのテキストと数値を相互変換します。対応する Ruby 版は ya_kansuji 1.1.0 です。
 
 現状のサポートは日本語で万進な10進数だけです。歴史的に使われたことのあった万万進や他の漢字圏の漢数字はサポートしていません。
 
@@ -46,6 +46,14 @@ toBigInt('一無量大数') // => 1000000000000000000000000000000000000000000000
 toNumber('一無量大数') // throws RangeError
 ```
 
+先頭の「マイナス」は負の符号として解釈します。ASCII の `-` や Unicode の `−` (U+2212) は符号として扱いません。
+
+```ts
+toNumber('マイナス千二百三十四') // => -1234
+toNumber('マイナス 五十')        // => -50 (区切り文字は除去してから照合します)
+toNumber('2019-04')             // => 2019
+```
+
 ### フォーマット (数値 → 漢数字)
 
 `toKan` に数値 (`number` または `bigint`) を渡すと、漢数字や漢字混じりの文字列に変換します。
@@ -76,10 +84,16 @@ toKan(12340005, 'judic_h') // => '１２３４万０００５'
 | `judic_v` | 裁判判例縦書き方式 | `一万〇〇〇三` |
 | `judic_h` | 最高裁判例横書き方式 | `１万０００３` |
 
-`toKan` は負数と非整数の `number` を受け付けず、`RangeError` を投げます (`bigint` を渡せば任意の非負整数を表現できます)。
+負数を渡すと先頭に「マイナス」を付け、絶対値をフォーマッタに渡します。フォーマッタが受け取るのは常に非負の値です。
 
 ```ts
-toKan(-1)  // throws RangeError
+toKan(-1234)         // => 'マイナス千二百三十四'
+toKan(-10003, 'gov') // => 'マイナス1万, 3'
+```
+
+非整数の `number`、および `Number.MAX_SAFE_INTEGER` (2^53 - 1) を超える `number` は受け付けず、`RangeError` を投げます (`bigint` を渡せば任意の整数を表現できます)。
+
+```ts
 toKan(1.5) // throws RangeError
 ```
 
@@ -128,12 +142,14 @@ npm 経由のインストールなしに、CDN から直接読み込むことも
 Ruby 版 [ya_kansuji](https://github.com/sugi/ya_kansuji) からの移植にあたり、以下の点が異なります。
 
 1. **標準クラスの拡張は移植していません。** Ruby 版にある `String#to_i` の置き換えや `Integer#to_kan` の追加 (`core_ext` / `CoreRefine`) に相当する機能はありません。常に `toNumber` / `toBigInt` / `toKan` を明示的に呼び出してください。
-2. **`toKan` は負数・非整数・安全範囲外の `number` を受け付けません。** Ruby 版は `to_kan` の内部で単に `to_i` を呼ぶだけで検証をしていません。負数は例外なく無意味な巨大文字列を返します (`to_kan(-1)` は内部演算がそのまま流れ込み、`無量大数` 級の桁を持つ意味のない文字列になります)。小数は `Float#to_i` による切り捨てで普通に処理が通ります (`to_kan(1.5)` → `"一"`)。JS 版はどちらも `RangeError` を投げます。加えて `Number.MAX_SAFE_INTEGER` (2^53 - 1) を超える `number` を渡した場合も JS 版は `RangeError` です (`bigint` として渡せば任意の非負整数を扱えます)。
+2. **`toKan` は非整数・安全範囲外の `number` を受け付けません。** 負数は Ruby 版 1.1.0 と同様に先頭へ「マイナス」を付け、絶対値をフォーマッタに渡して処理します (`toKan(-1234)` → `'マイナス千二百三十四'`、Ruby の `to_kan(-1234)` と一致)。一方、Ruby 版は `to_kan` の内部で `to_i` を呼ぶため小数は `Float#to_i` で暗黙に切り捨てて処理が通ります (`to_kan(1.5)` → `"一"`、`to_kan(-0.5)` → `"零"`) が、JS 版は安全整数でない `number` を `RangeError` にします。加えて `Number.MAX_SAFE_INTEGER` (2^53 - 1) を超える `number` を渡した場合も JS 版は `RangeError` です (`bigint` として渡せば任意の整数を扱えます)。
 3. **`to_i` に相当する変換が `toBigInt` / `toNumber` の2関数に分かれています。** 無量大数 (10^68) は JavaScript の `Number.MAX_SAFE_INTEGER` (2^53 - 1) を大きく超えるため、常に安全な `bigint` を返す `toBigInt` と、安全な範囲を超えると `RangeError` を投げる `toNumber` を用途に応じて使い分けます。
 
-### 既知の非互換 (Ruby 版のバグ由来)
+### 既知の非互換
 
-Ruby 版 `YaKansuji::REGEXP_PART` は正規表現の文字クラスに配列を `#{}` 展開しており、これが `Array#to_s` (= `inspect`) の結果 (`["十", "百", ...]` のような、ダブルクォートやカンマを含む文字列表現) をそのまま埋め込んでしまう事故を起こしています。この副作用で Ruby 版の `YaKansuji.to_i` は数値列中に `"` (U+0022) が混ざっていても無視して受理します (`YaKansuji.to_i('1"000')` → `1000`)。JS 版はこの事故を再現しないため、`toBigInt('1"000')` は `"` の手前で読み取りが止まり `1` になります。あわせて空白除去の実装も Ruby 版の `[[:space:]]` と JS 版の `\s` とで対象が完全には一致せず、U+0085 (NEL) と U+FEFF (BOM) の2コードポイントだけ挙動が異なります (Ruby は NEL を空白として除去し BOM は除去しない、JS はその逆)。
+かつて Ruby 版 `YaKansuji::REGEXP_PART` は 1.0.x まで、正規表現の文字クラスに配列を `#{}` 展開しており、`Array#to_s` (= `inspect`) の結果 (`["十", "百", ...]` のような、ダブルクォートやカンマを含む文字列表現) をそのまま埋め込む事故を起こしていました。この副作用で 1.0.x の `YaKansuji.to_i` は数値列中に `"` (U+0022) が混ざっていても無視して受理していました (`to_i('1"000')` → `1000`)。JS 版はこの事故を再現していないため、以前から `toBigInt('1"000')` は `"` の手前で読み取りが止まり `1` を返しており、**ya_kansuji 1.1.0 でこのバグが修正された結果、両者の挙動は一致しました** (Ruby 1.1.0 の `to_i('1"000')` も `1`)。
+
+空白除去の実装は Ruby 版の `[[:space:]]` と JS 版の `\s` とで対象が完全には一致せず、U+0085 (NEL) と U+FEFF (BOM) の2コードポイントだけ挙動が異なります (Ruby は NEL を空白として除去し BOM は除去しない、JS はその逆)。
 
 ## License
 

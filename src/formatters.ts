@@ -38,7 +38,7 @@ export function toKan(
   } else {
     throw new RangeError(`toKan requires a safe integer or bigint: ${num}`)
   }
-  if (value < 0n) throw new RangeError(`toKan does not support negative values: ${num}`)
+  if (value < 0n) return `マイナス${toKan(-value, formatter, options)}`
 
   const fn = typeof formatter === 'function' ? formatter : formatters.get(formatter)
   if (!fn) throw new TypeError(`Unable to find formatter ${String(formatter)}`)

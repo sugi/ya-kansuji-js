@@ -11,7 +11,7 @@ const CHAR_CLASS = [
 ].join('')
 
 const PART_SOURCE = `${MULTI_UNITS.join('|')}|[${CHAR_CLASS}]`
-const KANSUJI_REGEXP = new RegExp(`(?:${PART_SOURCE})+`, 'u')
+const KANSUJI_REGEXP = new RegExp(`(?:マイナス)?(?:${PART_SOURCE})+`, 'u')
 const PART_REGEXP = new RegExp(PART_SOURCE, 'gu')
 
 const UNIT_EXP3_INDEX = new Map<string, number>(UNIT_EXP3.map((u, i) => [u, i]))
@@ -61,12 +61,14 @@ export function toBigInt(str: string): bigint {
     }
   }
   if (curnum !== null) ret3 += curnum
-  return ret4 + ret3
+  const ret = ret4 + ret3
+  return matched[0]!.startsWith('マイナス') ? -ret : ret
 }
 
 export function toNumber(str: string): number {
   const value = toBigInt(str)
-  if (value > BigInt(Number.MAX_SAFE_INTEGER)) {
+  const max = BigInt(Number.MAX_SAFE_INTEGER)
+  if (value > max || value < -max) {
     throw new RangeError(`kansuji value exceeds Number.MAX_SAFE_INTEGER: ${str}`)
   }
   return Number(value)
