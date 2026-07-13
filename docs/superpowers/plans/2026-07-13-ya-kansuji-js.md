@@ -6,16 +6,16 @@
 
 **Architecture:** 純関数の named export のみで構成する。パースは BigInt を正とし (無量大数 = 10^68 が Number を超えるため)、フォーマッタは名前付きレジストリ (Map) に静的登録する。モジュール読み込み時の副作用は持たない (`sideEffects: false` で tree-shaking されても壊れないようにするため)。
 
-**Tech Stack:** TypeScript (strict) / tsup (ESM + CJS + IIFE + d.ts) / Vitest / publint + @arethetypeswrong/cli
+**Tech Stack:** TypeScript (strict) / tsdown (ESM + CJS + IIFE + d.ts) / Vitest / publint + @arethetypeswrong/cli
 
-> 注 (2026-07-13, Task 1 実施時): 当初指定の tsdown は 0.22 系で Node ^22.18 を要求し本パッケージの engines >=20 と矛盾するため、Task 1 の許容フォールバックに従い tsup 8.x に切替済み。Task 2 以降のビルド関連記述は tsup を前提に読み替えること (npm scripts 経由なのでコマンドは不変)。
+> 注 (2026-07-13 更新): tsdown 0.22 系は Node ^22.18 || >=24.11 を要求する。当初の engines >=20 と矛盾したため一時 tsup に切り替えたが、ユーザー判断で Node フロアを上げて tsdown を維持する方針に確定した。パッケージの engines は ">=22"、CI マトリクスは 22/24 (いずれも各系列の最新パッチ = tsdown の要求を満たす)。
 
 **設計仕様:** `~/works/git/github/ya-wareki-js/docs/superpowers/specs/2026-07-13-ya-wareki-js-design.md` の「ya-kansuji API 設計」節。
 **移植元:** `~/works/git/github/ya_kansuji/lib/` (アルゴリズム) と `~/works/git/github/ya_kansuji/spec/` (期待値)。
 
 ## Global Constraints
 
-- パッケージ名 `ya-kansuji`、バージョン `0.1.0`、ライセンス MIT (Ruby 版 ya_kansuji と同じ。wareki の BSD とは異なる点に注意)、`engines: { "node": ">=20" }`。
+- パッケージ名 `ya-kansuji`、バージョン `0.1.0`、ライセンス MIT (Ruby 版 ya_kansuji と同じ。wareki の BSD とは異なる点に注意)、`engines: { "node": ">=22" }` (tsdown が Node ^22.18 || >=24.11 を要求するため)。
 - `"type": "module"`。ESM `dist/index.js` + CJS `dist/index.cjs` + IIFE `dist/index.iife.min.js` (グローバル名 `YaKansuji`)。
 - `sideEffects: false`。import 時に副作用を持つコードを書かない。
 - 組み込みフォーマッタの登録名は Ruby と同じ `simple` / `gov` / `lawyer` / `judic_v` / `judic_h`。
@@ -59,7 +59,7 @@
   },
   "files": ["dist", "src", "README.md", "LICENSE"],
   "sideEffects": false,
-  "engines": { "node": ">=20" },
+  "engines": { "node": ">=22" },
   "scripts": {
     "build": "tsdown",
     "test": "vitest run",
@@ -67,7 +67,7 @@
     "prepublishOnly": "npm run build && npm test && npx publint && npx @arethetypeswrong/cli --pack ."
   },
   "devDependencies": {
-    "tsdown": "^0.12.0",
+    "tsdown": "^0.22.6",
     "typescript": "^5.8.0",
     "vitest": "^3.0.0"
   }
@@ -865,7 +865,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: ['20', '22', '24']
+        node-version: ['22', '24']
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
