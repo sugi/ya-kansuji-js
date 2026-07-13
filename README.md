@@ -93,11 +93,18 @@ toKan(-1234)         // => 'マイナス千二百三十四'
 toKan(-10003, 'gov') // => 'マイナス1万, 3'
 ```
 
-非整数の `number`、および `Number.MAX_SAFE_INTEGER` (2^53 - 1) を超える `number` は受け付けず、`RangeError` を投げます (`bigint` を渡せば任意の整数を表現できます)。
+非整数の `number`、および `Number.MAX_SAFE_INTEGER` (2^53 - 1) を超える `number` は受け付けず、`RangeError` を投げます。
+より大きな値は `bigint` で渡せますが、組み込みフォーマッタが表現できる範囲は絶対値が `10^72 - 1` 以下です。
+範囲を超える値には `RangeError` を投げます。
 
 ```ts
 toKan(1.5) // throws RangeError
+toKan(10n ** 72n) // throws RangeError
 ```
+
+`simple`、`gov`、`lawyer`、`judicV`、`judicH` を直接呼び出す場合、入力は `0n` 以上 `10n ** 72n - 1n` 以下でなければなりません。
+負数や範囲を超える値には `RangeError` を投げます。
+負数をフォーマットする場合は、符号処理を行う `toKan` を使用してください。
 
 #### 独自フォーマッタ
 
@@ -144,7 +151,7 @@ npm 経由のインストールなしに、CDN から直接読み込むことも
 Ruby 版 [ya_kansuji](https://github.com/sugi/ya_kansuji) からの移植にあたり、以下の点が異なります。
 
 1. **標準クラスの拡張は移植していません。** Ruby 版にある `String#to_i` の置き換えや `Integer#to_kan` の追加 (`core_ext` / `CoreRefine`) に相当する機能はありません。常に `toNumber` / `toBigInt` / `toKan` を明示的に呼び出してください。
-2. **`toKan` は非整数・安全範囲外の `number` を受け付けません。** 負数は Ruby 版 1.1.0 と同様に先頭へ「マイナス」を付け、絶対値をフォーマッタに渡して処理します (`toKan(-1234)` → `'マイナス千二百三十四'`、Ruby の `to_kan(-1234)` と一致)。一方、Ruby 版は `to_kan` の内部で `to_i` を呼ぶため小数は `Float#to_i` で暗黙に切り捨てて処理が通ります (`to_kan(1.5)` → `"一"`、`to_kan(-0.5)` → `"零"`) が、JS 版は安全整数でない `number` を `RangeError` にします。加えて `Number.MAX_SAFE_INTEGER` (2^53 - 1) を超える `number` を渡した場合も JS 版は `RangeError` です (`bigint` として渡せば任意の整数を扱えます)。
+2. **`toKan` は非整数・安全範囲外の `number` を受け付けません。** 負数は Ruby 版 1.1.0 と同様に先頭へ「マイナス」を付け、絶対値をフォーマッタに渡して処理します (`toKan(-1234)` → `'マイナス千二百三十四'`、Ruby の `to_kan(-1234)` と一致)。一方、Ruby 版は `to_kan` の内部で `to_i` を呼ぶため小数は `Float#to_i` で暗黙に切り捨てて処理が通ります (`to_kan(1.5)` → `"一"`、`to_kan(-0.5)` → `"零"`) が、JS 版は安全整数でない `number` を `RangeError` にします。加えて `Number.MAX_SAFE_INTEGER` (2^53 - 1) を超える `number` を渡した場合も JS 版は `RangeError` です。`bigint` では絶対値 `10^72 - 1` まで扱えます。
 3. **`to_i` に相当する変換が `toBigInt` / `toNumber` の2関数に分かれています。** 無量大数 (10^68) は JavaScript の `Number.MAX_SAFE_INTEGER` (2^53 - 1) を大きく超えるため、常に安全な `bigint` を返す `toBigInt` と、安全な範囲を超えると `RangeError` を投げる `toNumber` を用途に応じて使い分けます。
 
 ### 既知の非互換

@@ -1,11 +1,31 @@
 import { describe, expect, it } from 'vitest'
 import {
+  gov,
   getFormatter,
+  judicH,
+  judicV,
   type KansujiFormatter,
+  lawyer,
   registerFormatter,
+  simple,
   toBigInt,
   toKan,
 } from '../src/index.js'
+import { MAX_SUPPORTED } from './fixtures/large-numbers.js'
+
+function createDeterministicRandom(seed: number): () => number {
+  let state = seed >>> 0
+  return () => {
+    state = (Math.imul(state, 1_664_525) + 1_013_904_223) >>> 0
+    return state / 0x1_0000_0000
+  }
+}
+
+function randomBigInt(random: () => number, digits: number): bigint {
+  let decimal = String(1 + Math.floor(random() * 9))
+  for (let i = 1; i < digits; i++) decimal += Math.floor(random() * 10)
+  return BigInt(decimal)
+}
 
 describe('toKan', () => {
   it('formats with the default simple formatter', () => {
@@ -60,12 +80,38 @@ describe('toKan', () => {
     }
   })
 
-  it('round-trips random integers (both signs) through simple formatter', () => {
+  it('accepts the largest supported magnitude and rejects larger values', () => {
+    expect(toBigInt(toKan(MAX_SUPPORTED))).toBe(MAX_SUPPORTED)
+    expect(toBigInt(toKan(-MAX_SUPPORTED))).toBe(-MAX_SUPPORTED)
+    expect(() => toKan(10n ** 72n)).toThrow(RangeError)
+    expect(() => toKan(-(10n ** 72n))).toThrow(RangeError)
+  })
+
+  it('rejects negative input passed directly to builtin formatters', () => {
+    for (const formatter of [simple, gov, lawyer, judicV, judicH]) {
+      expect(() => formatter(-1n)).toThrow(RangeError)
+    }
+  })
+
+  it('round-trips deterministic integers up to the 72-digit limit', () => {
+    const random = createDeterministicRandom(0x5eed_1234)
+    const boundaries = [
+      10n ** 67n - 1n,
+      10n ** 67n,
+      10n ** 68n - 1n,
+      10n ** 68n,
+      MAX_SUPPORTED,
+    ]
+
+    for (const n of boundaries) {
+      expect(toBigInt(toKan(n))).toBe(n)
+      expect(toBigInt(toKan(-n))).toBe(-n)
+    }
+
     for (let i = 0; i < 200; i++) {
-      const digits = 1 + Math.floor(Math.random() * 20)
-      let n = 0n
-      for (let d = 0; d < digits; d++) n = n * 10n + BigInt(Math.floor(Math.random() * 10))
-      if (Math.random() < 0.5) n = -n
+      const digits = 1 + Math.floor(random() * 72)
+      let n = randomBigInt(random, digits)
+      if (random() < 0.5) n = -n
       expect(toBigInt(toKan(n))).toBe(n)
     }
   })

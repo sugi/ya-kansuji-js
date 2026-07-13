@@ -1,9 +1,9 @@
 import { execFileSync } from 'node:child_process'
-import { existsSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 
-// ビルド済み dist を検証する。CI では build 後に実行される前提。
-describe.skipIf(!existsSync('dist/index.cjs'))('dist artifacts', () => {
+// npm test の pretest で生成した最新の dist を検証する。
+// dist がなければ skip せず、各テストを失敗させる。
+describe('dist artifacts', () => {
   it('works via CJS require', () => {
     const out = execFileSync('node', [
       '-e',

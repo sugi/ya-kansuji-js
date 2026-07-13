@@ -1,6 +1,5 @@
+import { KAN_DIGITS } from '../constants.js'
 import { groups4 } from '../groups.js'
-
-const KAN_DIGITS = '〇一二三四五六七八九'
 
 function judic(num: bigint, zero: string, mapDigits: (s: string) => string): string {
   if (num === 0n) return zero
@@ -15,7 +14,7 @@ function judic(num: bigint, zero: string, mapDigits: (s: string) => string): str
 }
 
 export function judicV(num: bigint): string {
-  return judic(num, '〇', (s) => s.replace(/[0-9]/g, (d) => KAN_DIGITS[Number(d)] as string))
+  return judic(num, '〇', (s) => s.replace(/[0-9]/g, (d) => KAN_DIGITS.charAt(Number(d))))
 }
 
 export function judicH(num: bigint): string {
