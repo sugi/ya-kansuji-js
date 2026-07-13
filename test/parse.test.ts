@@ -34,8 +34,25 @@ describe('toNumber', () => {
     expect(toNumber('二万、五十')).toBe(20_050)
   })
 
-  it('throws RangeError beyond MAX_SAFE_INTEGER', () => {
+  it('throws RangeError beyond MAX_SAFE_INTEGER for both signs', () => {
     expect(() => toNumber('一無量大数')).toThrow(RangeError)
+    expect(() => toNumber('マイナス一無量大数')).toThrow(RangeError)
+  })
+
+  it('parses a leading マイナス as a negative sign', () => {
+    expect(toNumber('マイナス千二百三十四')).toBe(-1234)
+    expect(toNumber('マイナス12,345')).toBe(-12_345)
+    expect(toNumber('マイナス 五十')).toBe(-50)
+    expect(toNumber('マイナス〇')).toBe(0)
+    expect(toNumber('マイナス思考で3日')).toBe(3)
+    expect(toNumber('マイナス')).toBe(0)
+    expect(toNumber('五マイナス三')).toBe(5)
+  })
+
+  it('does not treat ASCII/Unicode minus signs as negative markers', () => {
+    expect(toNumber('2019-04')).toBe(2019)
+    expect(toNumber('-123')).toBe(123)
+    expect(toNumber('−123')).toBe(123)
   })
 })
 
@@ -49,5 +66,19 @@ describe('toBigInt', () => {
   it('handles the astral unit 𥝱 and its variant 秭', () => {
     expect(toBigInt('三𥝱')).toBe(3n * 10n ** 24n)
     expect(toBigInt('三秭')).toBe(3n * 10n ** 24n)
+  })
+
+  it('negates via bigint when a leading マイナス is present', () => {
+    expect(toBigInt('マイナス千二百三十四')).toBe(-1234n)
+    expect(toBigInt('マイナス')).toBe(0n)
+  })
+
+  it('does not treat double quote as a numeric character', () => {
+    expect(toBigInt('1"000')).toBe(1n)
+    expect(toBigInt('一"二')).toBe(1n)
+  })
+
+  it('still matches the tail of the character class', () => {
+    expect(toBigInt('丗')).toBe(30n)
   })
 })
