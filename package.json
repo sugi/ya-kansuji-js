@@ -37,16 +37,16 @@
   ],
   "sideEffects": false,
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "scripts": {
-    "build": "tsup",
+    "build": "tsdown",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "prepublishOnly": "npm run build && npm test && npx publint && npx @arethetypeswrong/cli --pack ."
   },
   "devDependencies": {
-    "tsup": "^8.5.1",
+    "tsdown": "^0.22.7",
     "typescript": "^5.8.0",
     "vitest": "^3.0.0"
   }
