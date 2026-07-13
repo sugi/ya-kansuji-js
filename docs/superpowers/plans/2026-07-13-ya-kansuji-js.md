@@ -6,7 +6,9 @@
 
 **Architecture:** 純関数の named export のみで構成する。パースは BigInt を正とし (無量大数 = 10^68 が Number を超えるため)、フォーマッタは名前付きレジストリ (Map) に静的登録する。モジュール読み込み時の副作用は持たない (`sideEffects: false` で tree-shaking されても壊れないようにするため)。
 
-**Tech Stack:** TypeScript (strict) / tsdown (ESM + CJS + IIFE + d.ts) / Vitest / publint + @arethetypeswrong/cli
+**Tech Stack:** TypeScript (strict) / tsup (ESM + CJS + IIFE + d.ts) / Vitest / publint + @arethetypeswrong/cli
+
+> 注 (2026-07-13, Task 1 実施時): 当初指定の tsdown は 0.22 系で Node ^22.18 を要求し本パッケージの engines >=20 と矛盾するため、Task 1 の許容フォールバックに従い tsup 8.x に切替済み。Task 2 以降のビルド関連記述は tsup を前提に読み替えること (npm scripts 経由なのでコマンドは不変)。
 
 **設計仕様:** `~/works/git/github/ya-wareki-js/docs/superpowers/specs/2026-07-13-ya-wareki-js-design.md` の「ya-kansuji API 設計」節。
 **移植元:** `~/works/git/github/ya_kansuji/lib/` (アルゴリズム) と `~/works/git/github/ya_kansuji/spec/` (期待値)。
