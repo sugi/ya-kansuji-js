@@ -103,6 +103,8 @@ toKan(123, 'hoge') // => 'たくさん'
 
 登録済みフォーマッタは `getFormatter(name)` で取得できます。`toKan` の第2引数にはフォーマッタ名の代わりに関数を直接渡すこともできます。
 
+ESM 版 (`dist/index.js`) と CJS 版 (`dist/index.cjs`) はそれぞれ別モジュールとしてロードされ、フォーマッタのレジストリ (`Map`) を共有しません。`registerFormatter` で登録したフォーマッタを使う側は、登録した側と同じモジュール形式 (`import` または `require`) で `ya-kansuji` を読み込んでください。
+
 ### CDN での使用
 
 npm 経由のインストールなしに、CDN から直接読み込むこともできます。
@@ -126,8 +128,12 @@ npm 経由のインストールなしに、CDN から直接読み込むことも
 Ruby 版 [ya_kansuji](https://github.com/sugi/ya_kansuji) からの移植にあたり、以下の点が異なります。
 
 1. **標準クラスの拡張は移植していません。** Ruby 版にある `String#to_i` の置き換えや `Integer#to_kan` の追加 (`core_ext` / `CoreRefine`) に相当する機能はありません。常に `toNumber` / `toBigInt` / `toKan` を明示的に呼び出してください。
-2. **`toKan` は負数・非整数の `number` を受け付けません。** どちらを渡しても `RangeError` を投げます。Ruby 版は内部で `to_i` を呼ぶだけで検証をしておらず、負数や小数を渡すと `Integer#to_i` による暗黙の丸めや符号無視の演算が起きて、意味のない文字列が返っていました (例外にはなりません)。
+2. **`toKan` は負数・非整数・安全範囲外の `number` を受け付けません。** Ruby 版は `to_kan` の内部で単に `to_i` を呼ぶだけで検証をしていません。負数は例外なく無意味な巨大文字列を返します (`to_kan(-1)` は内部演算がそのまま流れ込み、`無量大数` 級の桁を持つ意味のない文字列になります)。小数は `Float#to_i` による切り捨てで普通に処理が通ります (`to_kan(1.5)` → `"一"`)。JS 版はどちらも `RangeError` を投げます。加えて `Number.MAX_SAFE_INTEGER` (2^53 - 1) を超える `number` を渡した場合も JS 版は `RangeError` です (`bigint` として渡せば任意の非負整数を扱えます)。
 3. **`to_i` に相当する変換が `toBigInt` / `toNumber` の2関数に分かれています。** 無量大数 (10^68) は JavaScript の `Number.MAX_SAFE_INTEGER` (2^53 - 1) を大きく超えるため、常に安全な `bigint` を返す `toBigInt` と、安全な範囲を超えると `RangeError` を投げる `toNumber` を用途に応じて使い分けます。
+
+### 既知の非互換 (Ruby 版のバグ由来)
+
+Ruby 版 `YaKansuji::REGEXP_PART` は正規表現の文字クラスに配列を `#{}` 展開しており、これが `Array#to_s` (= `inspect`) の結果 (`["十", "百", ...]` のような、ダブルクォートやカンマを含む文字列表現) をそのまま埋め込んでしまう事故を起こしています。この副作用で Ruby 版の `YaKansuji.to_i` は数値列中に `"` (U+0022) が混ざっていても無視して受理します (`YaKansuji.to_i('1"000')` → `1000`)。JS 版はこの事故を再現しないため、`toBigInt('1"000')` は `"` の手前で読み取りが止まり `1` になります。あわせて空白除去の実装も Ruby 版の `[[:space:]]` と JS 版の `\s` とで対象が完全には一致せず、U+0085 (NEL) と U+FEFF (BOM) の2コードポイントだけ挙動が異なります (Ruby は NEL を空白として除去し BOM は除去しない、JS はその逆)。
 
 ## License
 

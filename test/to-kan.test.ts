@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { getFormatter, registerFormatter, toBigInt, toKan } from '../src/index.js'
+import {
+  getFormatter,
+  type KansujiFormatter,
+  registerFormatter,
+  toBigInt,
+  toKan,
+} from '../src/index.js'
 
 describe('toKan', () => {
   it('formats with the default simple formatter', () => {
@@ -20,6 +26,14 @@ describe('toKan', () => {
 
   it('throws on unknown formatter names', () => {
     expect(() => toKan(1, 'no_such_formatter')).toThrow(TypeError)
+  })
+
+  it('rejects registering a non-callable formatter', () => {
+    expect(() => registerFormatter('t', true as unknown as KansujiFormatter)).toThrow(TypeError)
+    expect(() => registerFormatter('one', 1 as unknown as KansujiFormatter)).toThrow(TypeError)
+    expect(() => registerFormatter('str', 'hoge' as unknown as KansujiFormatter)).toThrow(
+      TypeError,
+    )
   })
 
   it('rejects negative and non-integer input', () => {

@@ -19,7 +19,7 @@
 - `"type": "module"`。ESM `dist/index.js` + CJS `dist/index.cjs` + IIFE `dist/index.iife.min.js` (グローバル名 `YaKansuji`)。
 - `sideEffects: false`。import 時に副作用を持つコードを書かない。
 - 組み込みフォーマッタの登録名は Ruby と同じ `simple` / `gov` / `lawyer` / `judic_v` / `judic_h`。
-- Ruby 版との意図的な差分は3つだけ: (1) String/Integer のクラス拡張は移植しない、(2) 負数は RangeError、(3) `to_i` は `toBigInt`/`toNumber` の2関数に分割。それ以外の入出力は Ruby 版と完全一致させる。
+- Ruby 版との意図的な差分は3つだけ: (1) String/Integer のクラス拡張は移植しない、(2) 負数は RangeError、(3) `to_i` は `toBigInt`/`toNumber` の2関数に分割。それ以外の入出力は Ruby 版と完全一致させる。(final review で確認した第4の差異: Ruby 版regexpの配列補間バグ由来の `"` 受容と、[[:space:]]/\s の U+0085・U+FEFF 差は再現せず README に既知の非互換として記載)。
 - コミットメッセージは英語。インラインコメントは外部要因や背景事情の説明に限る。
 - **`'𥝱'.length === 2`** (サロゲートペア)。文字単位の処理は必ず `Array.from` / `for...of` / spread を使い、`.length` や添字アクセスでコードポイントを数えない。
 
