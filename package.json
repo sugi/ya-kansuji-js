@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "Yet another Japanese kansuji library — converts Japanese numerals (漢数字・大字・全角) to/from numbers",
   "keywords": ["kansuji", "japanese", "numeral", "漢数字", "大字"],
-  "license": "BSD-2-Clause",
+  "license": "MIT",
   "author": "Tatsuki Sugiura <sugi@nemui.org>",
   "type": "module",
   "main": "./dist/index.cjs",
