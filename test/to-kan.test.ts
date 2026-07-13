@@ -37,6 +37,11 @@ describe('toKan', () => {
     expect(toKan(5, (n) => `<${n}>`)).toBe('<5>')
   })
 
+  it('allows custom formatters to handle values beyond the builtin unit range', () => {
+    const value = 10n ** 72n
+    expect(toKan(value, (n) => String(n))).toBe(String(value))
+  })
+
   it('runs registered custom formatters', () => {
     registerFormatter('hoge', (n) => (n === 1n ? 'いち' : 'たくさん'))
     expect(toKan(1, 'hoge')).toBe('いち')

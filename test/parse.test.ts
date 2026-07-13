@@ -31,12 +31,42 @@ describe('toNumber', () => {
   it('converts numbers with separators', () => {
     expect(toNumber('1,000億 5,432万')).toBe(100_054_320_000)
     expect(toNumber('12,345')).toBe(12_345)
+    expect(toNumber('一，二')).toBe(12)
     expect(toNumber('二万、五十')).toBe(20_050)
+  })
+
+  it('removes the same whitespace characters as ECMAScript \\s', () => {
+    const whitespaceCharacters = [
+      '\u0009', '\u000A', '\u000B', '\u000C', '\u000D', '\u0020', '\u00A0', '\u1680',
+      '\u2000', '\u2001', '\u2002', '\u2003', '\u2004', '\u2005', '\u2006', '\u2007',
+      '\u2008', '\u2009', '\u200A', '\u2028', '\u2029', '\u202F', '\u205F', '\u3000',
+      '\uFEFF',
+    ]
+
+    for (const whitespace of whitespaceCharacters) {
+      expect(toBigInt(`一${whitespace}二`)).toBe(12n)
+      expect(toBigInt(`マイナス${whitespace}五十`)).toBe(-50n)
+    }
+  })
+
+  it('does not remove characters outside ECMAScript \\s', () => {
+    expect(toBigInt('一\u0085二')).toBe(1n)
+    expect(toBigInt('一\u200B二')).toBe(1n)
   })
 
   it('throws RangeError beyond MAX_SAFE_INTEGER for both signs', () => {
     expect(() => toNumber('一無量大数')).toThrow(RangeError)
     expect(() => toNumber('マイナス一無量大数')).toThrow(RangeError)
+  })
+
+  it('accepts Number.MAX_SAFE_INTEGER and rejects the next integer for both signs', () => {
+    const maxSafeInteger = '9007199254740991'
+    const beyondMaxSafeInteger = '9007199254740992'
+
+    expect(toNumber(maxSafeInteger)).toBe(Number.MAX_SAFE_INTEGER)
+    expect(toNumber(`マイナス${maxSafeInteger}`)).toBe(-Number.MAX_SAFE_INTEGER)
+    expect(() => toNumber(beyondMaxSafeInteger)).toThrow(RangeError)
+    expect(() => toNumber(`マイナス${beyondMaxSafeInteger}`)).toThrow(RangeError)
   })
 
   it('parses a leading マイナス as a negative sign', () => {
@@ -68,6 +98,11 @@ describe('toBigInt', () => {
     expect(toBigInt('三秭')).toBe(3n * 10n ** 24n)
   })
 
+  it('handles normalized digits and multi-character units', () => {
+    expect(toBigInt('１萬貳拾')).toBe(10_020n)
+    expect(toBigInt('二不可思議三')).toBe(2n * 10n ** 64n + 3n)
+  })
+
   it('negates via bigint when a leading マイナス is present', () => {
     expect(toBigInt('マイナス千二百三十四')).toBe(-1234n)
     expect(toBigInt('マイナス')).toBe(0n)
@@ -76,6 +111,10 @@ describe('toBigInt', () => {
   it('does not treat double quote as a numeric character', () => {
     expect(toBigInt('1"000')).toBe(1n)
     expect(toBigInt('一"二')).toBe(1n)
+  })
+
+  it('keeps non-numeric characters when finding the first numeric run', () => {
+    expect(toBigInt('abc一,二xyz三')).toBe(12n)
   })
 
   it('still matches the tail of the character class', () => {
