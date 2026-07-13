@@ -1,9 +1,18 @@
+import { gov } from './formatter/gov.js'
+import { judicH, judicV } from './formatter/judic.js'
+import { lawyer } from './formatter/lawyer.js'
 import { simple } from './formatter/simple.js'
 
 export type KansujiFormatterOptions = Record<string, unknown>
 export type KansujiFormatter = (num: bigint, options?: KansujiFormatterOptions) => string
 
-const formatters = new Map<string, KansujiFormatter>([['simple', simple]])
+const formatters = new Map<string, KansujiFormatter>([
+  ['simple', simple],
+  ['gov', gov],
+  ['lawyer', lawyer],
+  ['judic_v', judicV],
+  ['judic_h', judicH],
+])
 
 export function registerFormatter(name: string, formatter: KansujiFormatter): void {
   if (typeof formatter !== 'function') {

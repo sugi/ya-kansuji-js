@@ -8,4 +8,7 @@ export {
   type KansujiFormatterOptions,
 } from './formatters.js'
 export { simple } from './formatter/simple.js'
+export { gov } from './formatter/gov.js'
+export { lawyer } from './formatter/lawyer.js'
+export { judicH, judicV } from './formatter/judic.js'
 export const VERSION = '0.1.0'
