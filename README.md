@@ -1,5 +1,7 @@
 # ya-kansuji
 
+[![CI](https://github.com/sugi/ya-kansuji-js/actions/workflows/ci.yml/badge.svg)](https://github.com/sugi/ya-kansuji-js/actions/workflows/ci.yml)
+
 Yet another (ultimate) Japanese Kansuji library for JavaScript/TypeScript.
 
 `ya-kansuji` は Ruby gem [ya_kansuji](https://github.com/sugi/ya_kansuji) の TypeScript/JavaScript 移植版です。漢数字・大字・全角数字混じりのテキストと数値を相互変換します。対応する Ruby 版は ya_kansuji 1.1.0 です。

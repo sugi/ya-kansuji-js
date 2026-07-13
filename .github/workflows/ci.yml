@@ -18,6 +18,14 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm run build
-      - run: npm test
+      - name: Test with coverage
+        run: |
+          npm run test:coverage | tee /tmp/vitest-coverage.out
+          {
+            echo "### Coverage (Node ${{ matrix.node-version }})"
+            echo '```'
+            sed -n '/% Coverage report/,$p' /tmp/vitest-coverage.out
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
       - run: npx publint
       - run: npx @arethetypeswrong/cli --pack .
