@@ -52,6 +52,21 @@ function clean(str: string): string {
   return result
 }
 
+/**
+ * 漢数字・大字・全角数字が混じったテキストを bigint に変換する。
+ *
+ * 照合前にカンマ・読点・各種空白などの区切り文字を除去し、先頭から連続してマッチする
+ * 数値表現だけを読み取る（例: `toBigInt('五x六')` は `5n`）。マッチしなければ `0n` を返す。
+ * 先頭の「マイナス」は負号として扱うが、ASCII の `-` や U+2212（−）は負号として扱わない。
+ * 値の上限はなく、無量大数（10^68）を超える大きさもそのまま扱える。
+ *
+ * @param str 変換対象の文字列
+ * @returns テキストが表す整数値
+ * @example
+ * toBigInt('一〇二四')       // => 1024n
+ * toBigInt('マイナス千二百') // => -1200n
+ * toBigInt('一無量大数')     // => 10n ** 68n
+ */
 export function toBigInt(str: string): bigint {
   const cleaned = clean(String(str))
   const matched = KANSUJI_REGEXP.exec(cleaned)
@@ -99,6 +114,19 @@ export function toBigInt(str: string): bigint {
   return matchedText.startsWith('マイナス') ? -ret : ret
 }
 
+/**
+ * {@link toBigInt} と同じ規則でテキストを解釈し、`number` として返す。
+ *
+ * 結果の絶対値が `Number.MAX_SAFE_INTEGER`（2^53 − 1）を超える場合は `RangeError` を
+ * 投げる。安全整数を超えうる値を扱うときは {@link toBigInt} を使うこと。
+ *
+ * @param str 変換対象の文字列
+ * @returns テキストが表す数値
+ * @throws {RangeError} 値が安全整数の範囲を超える場合
+ * @example
+ * toNumber('一〇二四')   // => 1024
+ * toNumber('一無量大数') // throws RangeError
+ */
 export function toNumber(str: string): number {
   const value = toBigInt(str)
   if (value > MAX_SAFE_BIGINT || value < -MAX_SAFE_BIGINT) {
