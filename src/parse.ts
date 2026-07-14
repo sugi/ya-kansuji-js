@@ -74,7 +74,7 @@ function clean(str: string): string {
 export function toBigInt(str: string): bigint {
   const s = String(str)
   if (s.length > MAX_INPUT_LENGTH) {
-    throw new RangeError(`kansuji input exceeds maximum length of ${MAX_INPUT_LENGTH} characters`)
+    throw new RangeError(`kansuji input exceeds maximum length of ${MAX_INPUT_LENGTH} UTF-16 code units`)
   }
   const cleaned = clean(s)
   const matched = KANSUJI_REGEXP.exec(cleaned)
