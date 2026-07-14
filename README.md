@@ -2,7 +2,7 @@
 
 [![npm version](https://img.shields.io/npm/v/ya-kansuji.svg)](https://www.npmjs.com/package/ya-kansuji)
 [![CI](https://github.com/sugi/ya-kansuji-js/actions/workflows/ci.yml/badge.svg)](https://github.com/sugi/ya-kansuji-js/actions/workflows/ci.yml)
-[![minzipped size](https://img.shields.io/bundlephobia/minzip/ya-kansuji)](https://bundlephobia.com/package/ya-kansuji)
+[![node](https://img.shields.io/node/v/ya-kansuji.svg)](https://www.npmjs.com/package/ya-kansuji)
 [![license](https://img.shields.io/npm/l/ya-kansuji.svg)](https://github.com/sugi/ya-kansuji-js/blob/master/LICENSE)
 
 Yet another (ultimate) Japanese Kansuji library for JavaScript/TypeScript.
