@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { toBigInt, toNumber } from '../src/index.js'
+import { MAX_INPUT_LENGTH, toBigInt, toNumber } from '../src/index.js'
 
 describe('toNumber', () => {
   it('converts kansuji to number', () => {
@@ -120,4 +120,29 @@ describe('toBigInt', () => {
   it('still matches the tail of the character class', () => {
     expect(toBigInt('丗')).toBe(30n)
   })
+})
+
+describe('input length guard', () => {
+  it('exposes the cap as a public constant', () => {
+    expect(MAX_INPUT_LENGTH).toBe(16384)
+  })
+
+  it('accepts input of exactly MAX_INPUT_LENGTH', () => {
+    expect(() => toBigInt('一'.repeat(MAX_INPUT_LENGTH))).not.toThrow()
+  })
+
+  it('throws RangeError when input exceeds MAX_INPUT_LENGTH', () => {
+    expect(() => toBigInt('一'.repeat(MAX_INPUT_LENGTH + 1))).toThrow(RangeError)
+  })
+
+  it('makes toNumber reject over-length input too', () => {
+    expect(() => toNumber('1'.repeat(MAX_INPUT_LENGTH + 1))).toThrow(RangeError)
+  })
+
+  // Regression guard: without the cap, parsing 1,000,000 digits is ~100s (O(n^2)),
+  // which would blow the per-test timeout. The guard rejects in O(1) before any
+  // accumulation, so this completes in well under 1s.
+  it('rejects a large adversarial digit run promptly', () => {
+    expect(() => toBigInt('1'.repeat(1_000_000))).toThrow(RangeError)
+  }, 1000)
 })

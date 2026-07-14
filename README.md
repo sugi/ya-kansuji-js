@@ -48,6 +48,18 @@ toBigInt('一無量大数') // => 1000000000000000000000000000000000000000000000
 toNumber('一無量大数') // throws RangeError
 ```
 
+#### 入力長の上限
+
+`toBigInt` / `toNumber` が受け付ける入力は最大 `MAX_INPUT_LENGTH`（16384 コードユニット）です。これを超える入力には `RangeError` を投げます。上限は入力文字列の**長さ**に対するもので、変換後の**値**に上限はありません（無量大数を超える大きさも扱えます）。この上限により、任意長テキストを渡してもパースの最悪計算コストが有界になります。
+
+```ts
+import { MAX_INPUT_LENGTH, toBigInt } from 'ya-kansuji'
+
+MAX_INPUT_LENGTH                            // => 16384
+toBigInt('一'.repeat(MAX_INPUT_LENGTH))     // OK
+toBigInt('一'.repeat(MAX_INPUT_LENGTH + 1)) // throws RangeError
+```
+
 先頭の「マイナス」は負の符号として解釈します。ASCII の `-` や Unicode の `−` (U+2212) は符号として扱いません。
 
 ```ts
@@ -134,14 +146,14 @@ npm 経由のインストールなしに、CDN から直接読み込むことも
 
 ```html
 <!-- script タグ (グローバル YaKansuji) -->
-<script src="https://cdn.jsdelivr.net/npm/ya-kansuji@0.1.0/dist/index.iife.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/ya-kansuji@1.0.0/dist/index.iife.min.js"></script>
 <script>
   console.log(YaKansuji.toKan(1234)); // => 千二百三十四
 </script>
 
 <!-- ES Modules -->
 <script type="module">
-  import { toNumber } from 'https://cdn.jsdelivr.net/npm/ya-kansuji@0.1.0/+esm';
+  import { toNumber } from 'https://cdn.jsdelivr.net/npm/ya-kansuji@1.0.0/+esm';
   console.log(toNumber('九億６千万卌一')); // => 960000041
 </script>
 ```

@@ -27,4 +27,18 @@ describe('dist artifacts', () => {
     ]).toString().trim()
     expect(out).toBe('千二百三十四')
   })
+
+  it('re-exports MAX_INPUT_LENGTH from built artifacts', () => {
+    const cjs = execFileSync('node', [
+      '-e',
+      "const k = require('./dist/index.cjs'); console.log(k.MAX_INPUT_LENGTH)",
+    ]).toString().trim()
+    expect(cjs).toBe('16384')
+
+    const esm = execFileSync('node', [
+      '-e',
+      "import('./dist/index.js').then(k => console.log(k.MAX_INPUT_LENGTH))",
+    ]).toString().trim()
+    expect(esm).toBe('16384')
+  })
 })
