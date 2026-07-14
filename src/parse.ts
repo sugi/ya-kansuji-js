@@ -42,6 +42,8 @@ function createUnitValues(units: readonly string[], base: bigint): Map<string, b
 const UNIT_EXP3_VALUES = createUnitValues(UNIT_EXP3, 10n)
 const UNIT_EXP4_VALUES = createUnitValues(UNIT_EXP4, 10_000n)
 const MAX_SAFE_BIGINT = BigInt(Number.MAX_SAFE_INTEGER)
+/** toBigInt / toNumber が受け付ける入力の最大長（UTF-16 コードユニット数）。 */
+export const MAX_INPUT_LENGTH = 16384
 
 function clean(str: string): string {
   let result = ''
@@ -59,16 +61,22 @@ function clean(str: string): string {
  * 数値表現だけを読み取る（例: `toBigInt('五x六')` は `5n`）。マッチしなければ `0n` を返す。
  * 先頭の「マイナス」は負号として扱うが、ASCII の `-` や U+2212（−）は負号として扱わない。
  * 値の上限はなく、無量大数（10^68）を超える大きさもそのまま扱える。
+ * 入力長が {@link MAX_INPUT_LENGTH} を超える場合は `RangeError` を投げる。
  *
  * @param str 変換対象の文字列
  * @returns テキストが表す整数値
+ * @throws {RangeError} 入力長が {@link MAX_INPUT_LENGTH} を超える場合
  * @example
  * toBigInt('一〇二四')       // => 1024n
  * toBigInt('マイナス千二百') // => -1200n
  * toBigInt('一無量大数')     // => 10n ** 68n
  */
 export function toBigInt(str: string): bigint {
-  const cleaned = clean(String(str))
+  const s = String(str)
+  if (s.length > MAX_INPUT_LENGTH) {
+    throw new RangeError(`kansuji input exceeds maximum length of ${MAX_INPUT_LENGTH} characters`)
+  }
+  const cleaned = clean(s)
   const matched = KANSUJI_REGEXP.exec(cleaned)
   if (!matched) return 0n
   const matchedText = matched[0]
@@ -123,6 +131,7 @@ export function toBigInt(str: string): bigint {
  * @param str 変換対象の文字列
  * @returns テキストが表す数値
  * @throws {RangeError} 値が安全整数の範囲を超える場合
+ * @throws {RangeError} 入力長が {@link MAX_INPUT_LENGTH} を超える場合
  * @example
  * toNumber('一〇二四')   // => 1024
  * toNumber('一無量大数') // throws RangeError

@@ -1,4 +1,4 @@
-export { toBigInt, toNumber } from './parse.js'
+export { MAX_INPUT_LENGTH, toBigInt, toNumber } from './parse.js'
 export { UNIT_EXP3, UNIT_EXP4 } from './constants.js'
 export {
   getFormatter,
