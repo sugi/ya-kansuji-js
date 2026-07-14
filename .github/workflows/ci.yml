@@ -29,3 +29,25 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
       - run: npx publint
       - run: npx @arethetypeswrong/cli --pack .
+
+  runtime-compat:
+    # Verifies the published dist runs on the oldest engines.node target.
+    # The dev toolchain (tsdown/vitest) needs Node >=22, so we build on 22
+    # and then execute the built artifact on the older runtime.
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: ['16', '18', '20']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run build
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Smoke-test built dist
+        run: node scripts/smoke.mjs
