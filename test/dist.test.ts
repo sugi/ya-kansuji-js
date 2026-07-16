@@ -41,4 +41,18 @@ describe('dist artifacts', () => {
     ]).toString().trim()
     expect(esm).toBe('16384')
   })
+
+  it('formats fractions and exposes fraction API via built artifacts', () => {
+    const cjs = execFileSync('node', [
+      '-e',
+      "const k = require('./dist/index.cjs'); console.log(k.toKan(1.05), k.splitFraction('1.05').join('|'), k.UNIT_FRAC.length)",
+    ]).toString().trim()
+    expect(cjs).toBe('一・五厘 1|0,5 21')
+
+    const esm = execFileSync('node', [
+      '-e',
+      "import('./dist/index.js').then(k => console.log(k.toKan('3.14159', 'judic_v')))",
+    ]).toString().trim()
+    expect(esm).toBe('三・一四一五九')
+  })
 })
