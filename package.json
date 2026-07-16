@@ -1,6 +1,6 @@
 {
   "name": "ya-kansuji",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Yet another Japanese kansuji library — converts Japanese numerals (漢数字・大字・全角) to/from numbers",
   "keywords": [
     "kansuji",
