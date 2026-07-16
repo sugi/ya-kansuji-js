@@ -192,14 +192,14 @@ npm 経由のインストールなしに、CDN から直接読み込むことも
 
 ```html
 <!-- script タグ (グローバル YaKansuji) -->
-<script src="https://cdn.jsdelivr.net/npm/ya-kansuji@1.0.0/dist/index.iife.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/ya-kansuji@1.1.0/dist/index.iife.min.js"></script>
 <script>
   console.log(YaKansuji.toKan(1234)); // => 千二百三十四
 </script>
 
 <!-- ES Modules -->
 <script type="module">
-  import { toNumber } from 'https://cdn.jsdelivr.net/npm/ya-kansuji@1.0.0/+esm';
+  import { toNumber } from 'https://cdn.jsdelivr.net/npm/ya-kansuji@1.1.0/+esm';
   console.log(toNumber('九億６千万卌一')); // => 960000041
 </script>
 ```

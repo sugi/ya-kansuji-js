@@ -30,7 +30,7 @@ const formatters = new Map<string, KansujiFormatter>([
  * (`import` または `require`) で `ya-kansuji` を読み込むこと。
  *
  * @param name フォーマッタ名。{@link toKan} の第2引数に渡して選択する
- * @param formatter `(num: bigint, options?) => string`。`num` は常に 0 以上
+ * @param formatter `(num: KansujiValue, options?) => string`。`num` は常に 0 以上の正規化済みの値
  * @throws {TypeError} `formatter` が関数でない場合
  */
 export function registerFormatter(name: string, formatter: KansujiFormatter): void {
