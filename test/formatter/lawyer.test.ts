@@ -28,4 +28,13 @@ describe('lawyer formatter', () => {
       '9,999無量大数9,999不可思議9,999那由他9,999阿僧祇9,999恒河沙9,999極9,999載9,999正9,999澗9,999溝9,999穣9,999𥝱9,999垓9,999京9,999兆9,999億9,999万9,999',
     )
   })
+
+  it('converts fractional values with decimal point notation', () => {
+    expect(lawyer({ int: 0n, frac: [5] })).toBe('0.5')
+    expect(lawyer({ int: 123n, frac: [4, 5, 6] })).toBe('123.456')
+    expect(lawyer({ int: 1n, frac: [0, 5] })).toBe('1.05')
+    expect(lawyer({ int: 12_345_678n, frac: [9] })).toBe('1,234万5,678.9')
+    expect(lawyer({ int: 12_340_000n, frac: [5] })).toBe('1,234万0.5')
+    expect(lawyer({ int: 100_000_000n, frac: [5] })).toBe('1億0.5')
+  })
 })
