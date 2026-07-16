@@ -2,15 +2,17 @@ import { gov } from './formatter/gov.js'
 import { judicH, judicV } from './formatter/judic.js'
 import { lawyer } from './formatter/lawyer.js'
 import { simple } from './formatter/simple.js'
+import { normalizeValue, type KansujiValue } from './value.js'
 
 /** フォーマッタに渡す任意のオプション。ビルトインフォーマッタは参照しない。 */
 export type KansujiFormatterOptions = Record<string, unknown>
 
 /**
- * 非負の bigint を文字列へ整形する関数。{@link toKan} は負数の符号処理を済ませたうえで
- * 常に 0 以上の値を渡す。
+ * 非負の正規化済み値を文字列へ整形する関数。{@link toKan} は符号処理と正規化を済ませた
+ * うえで、整数なら bigint、小数を含む値なら {@link KansujiFraction} を渡す。
+ * {@link splitFraction} で整数部と小数桁に分解できる。
  */
-export type KansujiFormatter = (num: bigint, options?: KansujiFormatterOptions) => string
+export type KansujiFormatter = (num: KansujiValue, options?: KansujiFormatterOptions) => string
 
 const formatters = new Map<string, KansujiFormatter>([
   ['simple', simple],
@@ -28,7 +30,7 @@ const formatters = new Map<string, KansujiFormatter>([
  * (`import` または `require`) で `ya-kansuji` を読み込むこと。
  *
  * @param name フォーマッタ名。{@link toKan} の第2引数に渡して選択する
- * @param formatter `(num: bigint, options?) => string`。`num` は常に 0 以上
+ * @param formatter `(num: KansujiValue, options?) => string`。`num` は常に 0 以上の正規化済みの値
  * @throws {TypeError} `formatter` が関数でない場合
  */
 export function registerFormatter(name: string, formatter: KansujiFormatter): void {
@@ -52,37 +54,34 @@ export function getFormatter(name: string): KansujiFormatter | undefined {
  * 数値を漢数字・漢字混じりの文字列へ整形する。
  *
  * 負数は先頭に「マイナス」を付け、絶対値をフォーマッタに渡す（フォーマッタが受け取るのは
- * 常に非負値）。`number` は安全整数でなければならず、より大きな値は `bigint` で渡すこと。
- * ビルトインフォーマッタが表現できるのは絶対値 `10^72 − 1` まで。
+ * 常に非負の正規化済み値）。整数の `number` は安全整数でなければならず、より大きな値は
+ * `bigint` か 10 進文字列で渡すこと。非整数の `number` は `String(num)` の最短 10 進表現
+ * として解釈する。文字列は `-?\d+(\.\d+)?([eE][+-]?\d+)?` 形式のみ受け付け、長さは
+ * {@link MAX_INPUT_LENGTH} まで。小数部は 10^-21（清浄）で四捨五入する。
+ * ビルトインフォーマッタが表現できるのは整数部の絶対値 `10^72 − 1` まで。
  *
- * @param num 変換対象。`number`（安全整数）または `bigint`
+ * @param num 変換対象。`number`、`bigint`、または 10 進数文字列
  * @param formatter フォーマッタ名、またはフォーマッタ関数。既定は `'simple'`
  * @param options フォーマッタへ渡すオプション（ビルトインは未使用）
  * @returns 整形後の文字列
- * @throws {RangeError} `num` が非整数、安全整数を超える `number`、またはビルトイン
- *   フォーマッタの表現範囲を超える場合
+ * @throws {RangeError} `num` が NaN・無限大・安全整数を超える整数 `number`・不正な形式の
+ *   文字列、またはビルトインフォーマッタの表現範囲を超える場合
  * @throws {TypeError} 指定した名前のフォーマッタが見つからない場合
  * @example
  * toKan(12345)           // => '一万二千三百四十五'
  * toKan(12340005, 'gov') // => '1234万, 5'
  * toKan(-1234)           // => 'マイナス千二百三十四'
+ * toKan(1.05)            // => '一・五厘'
+ * toKan('123.456', 'gov') // => '123.456'
  */
 export function toKan(
-  num: number | bigint,
+  num: number | bigint | string,
   formatter: string | KansujiFormatter = 'simple',
   options: KansujiFormatterOptions = {},
 ): string {
-  let value: bigint
-  if (typeof num === 'bigint') {
-    value = num
-  } else if (Number.isSafeInteger(num)) {
-    value = BigInt(num)
-  } else {
-    throw new RangeError(`toKan requires a safe integer or bigint: ${num}`)
-  }
-  if (value < 0n) return `マイナス${toKan(-value, formatter, options)}`
-
+  const { negative, value } = normalizeValue(num)
   const fn = typeof formatter === 'function' ? formatter : formatters.get(formatter)
   if (!fn) throw new TypeError(`Unable to find formatter ${String(formatter)}`)
-  return fn(value, options)
+  const ret = fn(value, options)
+  return negative ? `マイナス${ret}` : ret
 }

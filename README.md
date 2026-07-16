@@ -7,7 +7,7 @@
 
 Yet another (ultimate) Japanese Kansuji library for JavaScript/TypeScript.
 
-`ya-kansuji` は Ruby gem [ya_kansuji](https://github.com/sugi/ya_kansuji) の TypeScript/JavaScript 移植版です。漢数字・大字・全角数字混じりのテキストと数値を相互変換します。対応する Ruby 版は ya_kansuji 1.1.0 です。
+`ya-kansuji` は Ruby gem [ya_kansuji](https://github.com/sugi/ya_kansuji) の TypeScript/JavaScript 移植版です。漢数字・大字・全角数字混じりのテキストと数値を相互変換します。対応する Ruby 版は ya_kansuji 1.3.0 です。
 
 現状のサポートは日本語で万進な10進数だけです。歴史的に使われたことのあった万万進や他の漢字圏の漢数字はサポートしていません。
 
@@ -23,6 +23,7 @@ Yet another (ultimate) Japanese Kansuji library for JavaScript/TypeScript.
 * 数値から漢数字、漢字混じり数値文字列へのフォーマット
   * 複数のビルトインフォーマッタ
   * フォーマッタプラグイン機構
+  * 小数（分厘毛〜清浄）
 
 ## インストール
 
@@ -53,7 +54,7 @@ toNumber('一無量大数') // throws RangeError
 
 #### 入力長の上限
 
-`toBigInt` / `toNumber` が受け付ける入力は最大 `MAX_INPUT_LENGTH`（16384 コードユニット）です。これを超える入力には `RangeError` を投げます。上限は入力文字列の**長さ**に対するもので、変換後の**値**に上限はありません（無量大数を超える大きさも扱えます）。この上限により、任意長テキストを渡してもパースの最悪計算コストが有界になります。
+`toBigInt` / `toNumber` が受け付ける入力は最大 `MAX_INPUT_LENGTH`（16384 コードユニット）です。これを超える入力には `RangeError` を投げます。上限は入力文字列の**長さ**に対するもので、変換後の**値**に上限はありません（無量大数を超える大きさも扱えます）。この上限により、任意長テキストを渡してもパースの最悪計算コストが有界になります。`toKan` に 10 進数文字列（`'1.05'` や `'1e20'` など）を渡す場合も同じ上限が適用されます。
 
 ```ts
 import { MAX_INPUT_LENGTH, toBigInt } from 'ya-kansuji'
@@ -108,12 +109,42 @@ toKan(-1234)         // => 'マイナス千二百三十四'
 toKan(-10003, 'gov') // => 'マイナス1万, 3'
 ```
 
-非整数の `number`、および `Number.MAX_SAFE_INTEGER` (2^53 - 1) を超える `number` は受け付けず、`RangeError` を投げます。
-より大きな値は `bigint` で渡せますが、組み込みフォーマッタが表現できる範囲は絶対値が `10^72 - 1` 以下です。
+#### 小数
+
+非整数の `number`、または 10 進数文字列を渡すと、小数の命数法（分 = 10⁻¹ 〜 清浄 = 10⁻²¹）で小数部を出力します。10⁻²¹ より小さい部分は四捨五入されます。
+
+```ts
+toKan(0.5)                // => '五分'
+toKan(123.456)            // => '百二十三・四分五厘六毛'
+toKan(3.14159, 'judic_v') // => '三・一四一五九'
+toKan(123.456, 'gov')     // => '123.456'
+toKan(1.05, 'judic_h')    // => '１．０５'
+```
+
+`number` は `String(num)` の最短 10 進表現として解釈されるため、`0.1` は正確に「一分」になります。逆に浮動小数点演算の誤差はそのまま出力されます（`0.1 + 0.2` → `0.30000000000000004` → 「三分四弾指」）。誤差や float の精度限界（有効 15〜17 桁）を避けたい場合は 10 進数文字列を渡してください（Ruby 版の Rational / BigDecimal に相当します）。
+
+```ts
+toKan(0.1 + 0.2)                 // => '三分四弾指'
+toKan('0.123456789012345678901') // => 21 桁の小数もそのまま扱える
+toKan('1e20')                    // => '一垓' (安全整数を超える値も文字列なら正確)
+```
+
+文字列として受け付けるのは `-?\d+(\.\d+)?([eE][+-]?\d+)?` 形式の 10 進表記のみで、漢数字文字列は解釈しません。`toBigInt` / `toNumber` と同じく、入力長は `MAX_INPUT_LENGTH` までです。整数の `number` は従来どおり安全整数のみ受け付けます（`toKan(1e21)` は `RangeError`。`toKan('1e21')` か `bigint` を使ってください）。
+
+小数を渡した場合の各フォーマッタの出力（`toKan(1.05, ...)` と `toKan(12340000.5, ...)` の実出力）:
+
+| フォーマッタ | 1.05 | 12340000.5 |
+| --- | --- | --- |
+| `simple` | `一・五厘` | `千二百三十四万・五分` |
+| `gov` | `1.05` | `1234万, 0.5` |
+| `lawyer` | `1.05` | `1,234万0.5` |
+| `judic_v` | `一・〇五` | `一二三四万〇〇〇〇・五` |
+| `judic_h` | `１．０５` | `１２３４万００００．５` |
+
+より大きな値は `bigint` で渡せますが、組み込みフォーマッタが表現できる範囲は整数部の絶対値が `10^72 - 1` 以下です。
 範囲を超える値には `RangeError` を投げます。
 
 ```ts
-toKan(1.5) // throws RangeError
 toKan(10n ** 72n) // throws RangeError
 ```
 
@@ -123,7 +154,7 @@ toKan(10n ** 72n) // throws RangeError
 
 #### 独自フォーマッタ
 
-`registerFormatter` を使うと独自のフォーマッタを登録できます。第1引数に名前、第2引数に `(num: bigint, options?) => string` の関数を渡します。
+`registerFormatter` を使うと独自のフォーマッタを登録できます。第1引数に名前、第2引数に `(num: KansujiValue, options?) => string` の関数を渡します。
 
 ```ts
 import { registerFormatter, toKan } from 'ya-kansuji'
@@ -141,6 +172,18 @@ toKan(123, 'hoge') // => 'たくさん'
 
 登録済みフォーマッタは `getFormatter(name)` で取得できます。`toKan` の第2引数にはフォーマッタ名の代わりに関数を直接渡すこともできます。
 
+フォーマッタが受け取るのは正規化済みの非負値です。整数なら `bigint`、小数を含む値なら `KansujiFraction`（`{ int: bigint, frac: readonly number[] }`）が渡ります。`splitFraction` を使うと整数部と小数桁（最上位から、末尾ゼロ除去済み）に分解できます。
+
+```ts
+import { registerFormatter, splitFraction, toKan } from 'ya-kansuji'
+
+registerFormatter('csv', (num) => {
+  const [int, frac] = splitFraction(num)
+  return frac.length === 0 ? String(int) : `${int}.${frac.join('')}`
+})
+toKan(1234.5, 'csv') // => '1234.5'
+```
+
 ESM 版 (`dist/index.js`) と CJS 版 (`dist/index.cjs`) はそれぞれ別モジュールとしてロードされ、フォーマッタのレジストリ (`Map`) を共有しません。`registerFormatter` で登録したフォーマッタを使う側は、登録した側と同じモジュール形式 (`import` または `require`) で `ya-kansuji` を読み込んでください。
 
 ### CDN での使用
@@ -149,14 +192,14 @@ npm 経由のインストールなしに、CDN から直接読み込むことも
 
 ```html
 <!-- script タグ (グローバル YaKansuji) -->
-<script src="https://cdn.jsdelivr.net/npm/ya-kansuji@1.0.0/dist/index.iife.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/ya-kansuji@1.1.0/dist/index.iife.min.js"></script>
 <script>
   console.log(YaKansuji.toKan(1234)); // => 千二百三十四
 </script>
 
 <!-- ES Modules -->
 <script type="module">
-  import { toNumber } from 'https://cdn.jsdelivr.net/npm/ya-kansuji@1.0.0/+esm';
+  import { toNumber } from 'https://cdn.jsdelivr.net/npm/ya-kansuji@1.1.0/+esm';
   console.log(toNumber('九億６千万卌一')); // => 960000041
 </script>
 ```
@@ -166,7 +209,7 @@ npm 経由のインストールなしに、CDN から直接読み込むことも
 Ruby 版 [ya_kansuji](https://github.com/sugi/ya_kansuji) からの移植にあたり、以下の点が異なります。
 
 1. **標準クラスの拡張は移植していません。** Ruby 版にある `String#to_i` の置き換えや `Integer#to_kan` の追加 (`core_ext` / `CoreRefine`) に相当する機能はありません。常に `toNumber` / `toBigInt` / `toKan` を明示的に呼び出してください。
-2. **`toKan` は非整数・安全範囲外の `number` を受け付けません。** 負数は Ruby 版 1.1.0 と同様に先頭へ「マイナス」を付け、絶対値をフォーマッタに渡して処理します (`toKan(-1234)` → `'マイナス千二百三十四'`、Ruby の `to_kan(-1234)` と一致)。一方、Ruby 版は `to_kan` の内部で `to_i` を呼ぶため小数は `Float#to_i` で暗黙に切り捨てて処理が通ります (`to_kan(1.5)` → `"一"`、`to_kan(-0.5)` → `"零"`) が、JS 版は安全整数でない `number` を `RangeError` にします。加えて `Number.MAX_SAFE_INTEGER` (2^53 - 1) を超える `number` を渡した場合も JS 版は `RangeError` です。`bigint` では絶対値 `10^72 - 1` まで扱えます。
+2. **`toKan` は安全範囲外の整数 `number` を受け付けません。** 負数は Ruby 版と同様に先頭へ「マイナス」を付け、絶対値をフォーマッタに渡して処理します (`toKan(-1234)` → `'マイナス千二百三十四'`、Ruby の `to_kan(-1234)` と一致)。非整数の `number` は Ruby 版 1.3.0 の小数対応（Rational / BigDecimal 相当）に合わせて小数として整形します (`toKan(1.05)` → `'一・五厘'`)。一方、`Number.MAX_SAFE_INTEGER` (2^53 - 1) を超える整数の `number` を渡した場合は JS 版のみ `RangeError` です（Ruby の `Integer` は任意精度）。`bigint` では絶対値 `10^72 - 1` まで扱えます。
 3. **`to_i` に相当する変換が `toBigInt` / `toNumber` の2関数に分かれています。** 無量大数 (10^68) は JavaScript の `Number.MAX_SAFE_INTEGER` (2^53 - 1) を大きく超えるため、常に安全な `bigint` を返す `toBigInt` と、安全な範囲を超えると `RangeError` を投げる `toNumber` を用途に応じて使い分けます。
 
 ### 既知の非互換

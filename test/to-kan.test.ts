@@ -6,6 +6,7 @@ import {
   judicV,
   type KansujiFormatter,
   lawyer,
+  MAX_INPUT_LENGTH,
   registerFormatter,
   simple,
   toBigInt,
@@ -61,11 +62,57 @@ describe('toKan', () => {
     )
   })
 
-  it('rejects non-integer number input', () => {
-    // Ruby は Float#to_i で暗黙に切り捨てて処理を通す (to_kan(1.5) => "一", to_kan(-0.5) => "零") が、
-    // JS 版は安全整数でない number を RangeError にする既存の非互換を維持する。
-    expect(() => toKan(1.5)).toThrow(RangeError)
-    expect(() => toKan(-0.5)).toThrow(RangeError)
+  it('formats fractional numbers', () => {
+    expect(toKan(0.5)).toBe('五分')
+    expect(toKan(1.05)).toBe('一・五厘')
+    expect(toKan(123.456, 'gov')).toBe('123.456')
+    expect(toKan('0.25', 'judic_h')).toBe('０．２５')
+    expect(toKan('3.14159', 'judic_v')).toBe('三・一四一五九')
+    expect(toKan(1.0)).toBe('一')
+    expect(toKan(0.0)).toBe('零')
+  })
+
+  it('interprets floats by their shortest decimal representation', () => {
+    expect(toKan(0.1)).toBe('一分')
+    expect(toKan(0.1 + 0.2)).toBe('三分四弾指')
+  })
+
+  it('rounds fractions below 清浄 (10^-21)', () => {
+    expect(toKan('1e-22')).toBe('零')
+    expect(toKan('0.9999999999999999999999')).toBe('一')
+  })
+
+  it('formats negative fractions with a leading マイナス', () => {
+    expect(toKan(-0.5)).toBe('マイナス五分')
+    expect(toKan(-1.05, 'gov')).toBe('マイナス1.05')
+    expect(toKan('-0.0')).toBe('零')
+  })
+
+  it('rejects NaN, Infinity, and unsafe integral numbers', () => {
+    expect(() => toKan(Number.NaN)).toThrow(RangeError)
+    expect(() => toKan(Number.POSITIVE_INFINITY)).toThrow(RangeError)
+    expect(() => toKan(1e21)).toThrow(RangeError)
+  })
+
+  it('rejects malformed or oversized decimal strings', () => {
+    expect(() => toKan('abc')).toThrow(RangeError)
+    expect(() => toKan('1.2.3')).toThrow(RangeError)
+    expect(() => toKan('二万')).toThrow(RangeError)
+    expect(() => toKan('1'.repeat(MAX_INPUT_LENGTH + 1))).toThrow(RangeError)
+    expect(() => toKan('1e999999999')).toThrow(RangeError)
+  })
+
+  it('checks the builtin range against the integer part of fractional values', () => {
+    expect(toKan(`${'9'.repeat(72)}.5`)).toMatch(/九・五分$/)
+    expect(() => toKan(`1${'0'.repeat(72)}.5`)).toThrow(RangeError)
+  })
+
+  it('passes normalized values through to custom formatters', () => {
+    const probe: KansujiFormatter = (n) =>
+      typeof n === 'bigint' ? `int:${n}` : `frac:${n.int}/${n.frac.join('')}`
+    expect(toKan(5, probe)).toBe('int:5')
+    expect(toKan(0.5, probe)).toBe('frac:0/5')
+    expect(toKan(-1.5, probe)).toBe('マイナスfrac:1/5')
   })
 
   it('formats negative numbers with a leading マイナス', () => {

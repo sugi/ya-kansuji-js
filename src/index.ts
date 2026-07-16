@@ -1,5 +1,6 @@
 export { MAX_INPUT_LENGTH, toBigInt, toNumber } from './parse.js'
-export { UNIT_EXP3, UNIT_EXP4 } from './constants.js'
+export { UNIT_EXP3, UNIT_EXP4, UNIT_FRAC } from './constants.js'
+export { splitFraction, type KansujiFraction, type KansujiValue } from './value.js'
 export {
   getFormatter,
   registerFormatter,

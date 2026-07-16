@@ -29,6 +29,15 @@ describe('judicV formatter', () => {
       '九九九九無量大数九九九九不可思議九九九九那由他九九九九阿僧祇九九九九恒河沙九九九九極九九九九載九九九九正九九九九澗九九九九溝九九九九穣九九九九𥝱九九九九垓九九九九京九九九九兆九九九九億九九九九万九九九九',
     )
   })
+
+  it('converts fractional values with positional notation (judic_v)', () => {
+    expect(judicV({ int: 0n, frac: [5] })).toBe('〇・五')
+    expect(judicV({ int: 123n, frac: [4, 5, 6] })).toBe('一二三・四五六')
+    expect(judicV({ int: 1n, frac: [0, 5] })).toBe('一・〇五')
+    expect(judicV({ int: 3n, frac: [1, 4, 1, 5, 9] })).toBe('三・一四一五九')
+    expect(judicV({ int: 12_340_000n, frac: [5] })).toBe('一二三四万〇〇〇〇・五')
+    expect(judicV({ int: 100_000_000n, frac: [5] })).toBe('一億〇〇〇〇・五')
+  })
 })
 
 describe('judicH formatter', () => {
@@ -52,5 +61,12 @@ describe('judicH formatter', () => {
     expect(judicH(MAX_SUPPORTED)).toBe(
       '９９９９無量大数９９９９不可思議９９９９那由他９９９９阿僧祇９９９９恒河沙９９９９極９９９９載９９９９正９９９９澗９９９９溝９９９９穣９９９９𥝱９９９９垓９９９９京９９９９兆９９９９億９９９９万９９９９',
     )
+  })
+
+  it('converts fractional values with positional notation (judic_h)', () => {
+    expect(judicH({ int: 0n, frac: [5] })).toBe('０．５')
+    expect(judicH({ int: 123n, frac: [4, 5, 6] })).toBe('１２３．４５６')
+    expect(judicH({ int: 1n, frac: [0, 5] })).toBe('１．０５')
+    expect(judicH({ int: 12_340_000n, frac: [5] })).toBe('１２３４万００００．５')
   })
 })

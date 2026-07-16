@@ -45,6 +45,14 @@ const MAX_SAFE_BIGINT = BigInt(Number.MAX_SAFE_INTEGER)
 /** toBigInt / toNumber が受け付ける入力の最大長（UTF-16 コードユニット数）。 */
 export const MAX_INPUT_LENGTH = 16384
 
+export function assertMaxInputLength(str: string): void {
+  if (str.length > MAX_INPUT_LENGTH) {
+    throw new RangeError(
+      `kansuji input exceeds maximum length of ${MAX_INPUT_LENGTH} UTF-16 code units`,
+    )
+  }
+}
+
 function clean(str: string): string {
   let result = ''
   for (const c of str) {
@@ -73,9 +81,7 @@ function clean(str: string): string {
  */
 export function toBigInt(str: string): bigint {
   const s = String(str)
-  if (s.length > MAX_INPUT_LENGTH) {
-    throw new RangeError(`kansuji input exceeds maximum length of ${MAX_INPUT_LENGTH} UTF-16 code units`)
-  }
+  assertMaxInputLength(s)
   const cleaned = clean(s)
   const matched = KANSUJI_REGEXP.exec(cleaned)
   if (!matched) return 0n

@@ -29,4 +29,14 @@ describe('gov formatter', () => {
       '9999無量大数, 9999不可思議, 9999那由他, 9999阿僧祇, 9999恒河沙, 9999極, 9999載, 9999正, 9999澗, 9999溝, 9999穣, 9999𥝱, 9999垓, 9999京, 9999兆, 9999億, 9999万, 9999',
     )
   })
+
+  it('converts fractional values with decimal point notation', () => {
+    expect(gov({ int: 0n, frac: [5] })).toBe('0.5')
+    expect(gov({ int: 123n, frac: [4, 5, 6] })).toBe('123.456')
+    expect(gov({ int: 1n, frac: [0, 5] })).toBe('1.05')
+    expect(gov({ int: 1n, frac: [5] })).toBe('1.5')
+    expect(gov({ int: 12_340_000n, frac: [5] })).toBe('1234万, 0.5')
+    expect(gov({ int: 10_001n, frac: [5] })).toBe('1万, 1.5')
+    expect(gov({ int: 100_000_000n, frac: [5] })).toBe('1億, 0.5')
+  })
 })
