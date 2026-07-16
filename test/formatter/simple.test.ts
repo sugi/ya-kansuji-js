@@ -28,4 +28,18 @@ describe('simple formatter', () => {
       '九千九百九十九無量大数九千九百九十九不可思議九千九百九十九那由他九千九百九十九阿僧祇九千九百九十九恒河沙九千九百九十九極九千九百九十九載九千九百九十九正九千九百九十九澗九千九百九十九溝九千九百九十九穣九千九百九十九𥝱九千九百九十九垓九千九百九十九京九千九百九十九兆九千九百九十九億九千九百九十九万九千九百九十九',
     )
   })
+
+  it('converts fractional values with small number units', () => {
+    expect(simple({ int: 0n, frac: [5] })).toBe('五分')
+    expect(simple({ int: 123n, frac: [4, 5, 6] })).toBe('百二十三・四分五厘六毛')
+    expect(simple({ int: 1n, frac: [0, 5] })).toBe('一・五厘')
+    expect(simple({ int: 3n, frac: [1, 4, 1, 5, 9] })).toBe('三・一分四厘一毛五糸九忽')
+    expect(simple({ int: 12_340_000n, frac: [5] })).toBe('千二百三十四万・五分')
+    expect(simple({ int: 100_000_000n, frac: [5] })).toBe('一億・五分')
+    expect(
+      simple({ int: 0n, frac: [1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1] }),
+    ).toBe(
+      '一分二厘三毛四糸五忽六微七繊八沙九塵一渺二漠三模糊四逡巡五須臾六瞬息七弾指八刹那九六徳一清浄',
+    )
+  })
 })
