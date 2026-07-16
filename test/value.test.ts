@@ -137,4 +137,11 @@ describe('splitFraction', () => {
     expect(() => splitFraction(-5n)).toThrow(RangeError)
     expect(() => splitFraction({ int: -1n, frac: [5] })).toThrow(RangeError)
   })
+
+  it('rejects objects that are not a valid KansujiFraction', () => {
+    expect(() => splitFraction({} as never)).toThrow(RangeError)
+    expect(() => splitFraction([] as never)).toThrow(RangeError)
+    expect(() => splitFraction({ int: 5, frac: [5] } as never)).toThrow(RangeError)
+    expect(() => splitFraction({ int: 5n } as never)).toThrow(RangeError)
+  })
 })

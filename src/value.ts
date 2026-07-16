@@ -29,7 +29,7 @@ const DECIMAL_REGEXP = /^(-)?(\d+)(?:\.(\d+))?(?:[eE]([+-]?\d+))?$/
 // 巨大な指数で bigint を構築しないよう、小数点位置を先に検査する。
 function normalizeDecimalString(str: string): NormalizedValue {
   const m = DECIMAL_REGEXP.exec(str)
-  if (!m) throw new RangeError(`toKan requires a decimal number string: ${str}`)
+  if (!m) throw new RangeError(`kansuji value must be a decimal number string: ${str}`)
   const negative = m[1] === '-'
   const digits = m[2]! + (m[3] ?? '')
   if (!/[1-9]/.test(digits)) return { negative: false, value: 0n }
@@ -64,11 +64,11 @@ export function normalizeValue(num: number | bigint | string): NormalizedValue {
   }
   if (typeof num === 'number') {
     if (!Number.isFinite(num)) {
-      throw new RangeError(`toKan requires a finite number: ${num}`)
+      throw new RangeError(`kansuji value must be finite: ${num}`)
     }
     if (Number.isInteger(num)) {
       if (!Number.isSafeInteger(num)) {
-        throw new RangeError(`toKan requires a safe integer or bigint: ${num}`)
+        throw new RangeError(`kansuji value must be a safe integer, bigint, or decimal string: ${num}`)
       }
       return num < 0 ? { negative: true, value: BigInt(-num) } : { negative: false, value: BigInt(num) }
     }
@@ -88,7 +88,7 @@ export function normalizeValue(num: number | bigint | string): NormalizedValue {
  *
  * @param num 分解する値
  * @returns `[整数部, 小数桁の配列]`。整数なら小数桁は空配列
- * @throws {RangeError} 値が負の場合、または number / 文字列として不正な場合
+ * @throws {RangeError} 値が負の場合、または number・文字列・オブジェクトとして不正な場合
  * @example
  * splitFraction(123n)      // => [123n, []]
  * splitFraction('123.456') // => [123n, [4, 5, 6]]
@@ -98,6 +98,9 @@ export function splitFraction(
   num: number | bigint | string | KansujiFraction,
 ): readonly [bigint, readonly number[]] {
   if (typeof num === 'object' && num !== null) {
+    if (typeof num.int !== 'bigint' || !Array.isArray(num.frac)) {
+      throw new RangeError('splitFraction requires a KansujiFraction with a bigint int and an array frac')
+    }
     if (num.int < 0n) throw new RangeError('Value must be non-negative')
     return [num.int, num.frac]
   }
